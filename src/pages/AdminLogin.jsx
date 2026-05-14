@@ -1,10 +1,8 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { FaUserShield, FaPhone, FaLock, FaEye, FaEyeSlash, FaArrowLeft } from 'react-icons/fa';
+import { FaUserShield, FaLock, FaEye, FaEyeSlash } from 'react-icons/fa';
 
 const AdminLogin = () => {
-  const navigate = useNavigate();
-  const [phone, setPhone] = useState('');
+  const [name, setName] = useState('');
   const [password, setPassword] = useState('');
   const [showPass, setShowPass] = useState(false);
   const [error, setError] = useState('');
@@ -14,110 +12,105 @@ const AdminLogin = () => {
     e.preventDefault();
     setError('');
 
-    if (!phone.trim()) {
-      setError('Telefon raqam kiriting');
-      return;
-    }
-    if (!password) {
-      setError('Parol kiriting');
-      return;
-    }
+    if (!name.trim()) { setError('Nom kiriting'); return; }
+    if (!password) { setError('Parol kiriting'); return; }
 
     setLoading(true);
 
     setTimeout(() => {
-      const users = JSON.parse(localStorage.getItem('users') || '[]');
-      
-      const admin = users.find(u => 
-        u.phone === phone.trim() && 
-        u.password === password && 
-        u.role === 'admin'
-      );
+      if (name.trim() === 'Admin' && password === 'admin123') {
+        const adminUser = {
+          id: 1,
+          firstName: 'Admin',
+          lastName: '',
+          phone: '',
+          password: 'admin123',
+          role: 'admin',
+          registeredAt: new Date().toISOString(),
+        };
 
-      if (admin) {
-        localStorage.setItem('currentUser', JSON.stringify(admin));
-        navigate('/admin');
+        let users = JSON.parse(localStorage.getItem('users') || '[]');
+        const adminIndex = users.findIndex(u => u.role === 'admin');
+        if (adminIndex >= 0) {
+          users[adminIndex] = adminUser;
+        } else {
+          users.push(adminUser);
+        }
+        localStorage.setItem('users', JSON.stringify(users));
+        localStorage.setItem('currentUser', JSON.stringify(adminUser));
+
+        // To'g'ridan-to'g'ri admin panelga o'tish
+        window.location.replace('/admin');
       } else {
-        setError('Telefon yoki parol noto\'g\'ri, yoki admin emas');
+        setError('Noto\'g\'ri nom yoki parol');
+        setLoading(false);
       }
-      setLoading(false);
-    }, 600);
+    }, 500);
   };
 
   return (
     <div className="min-h-screen bg-gray-900 flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
-        {/* Orqaga */}
-        <Link to="/" className="inline-flex items-center text-gray-400 hover:text-white mb-6 text-sm">
-          <FaArrowLeft className="mr-2" size={14} />
-          Bosh sahifaga qaytish
-        </Link>
-
-        <div className="bg-gray-800 rounded-3xl p-6 shadow-2xl border border-gray-700">
-          {/* Icon */}
-          <div className="text-center mb-6">
-            <div className="w-16 h-16 bg-gradient-to-r from-red-600 to-red-800 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <FaUserShield className="text-white text-2xl" />
+        <div className="bg-gray-800 rounded-3xl p-8 shadow-2xl border border-gray-700">
+          <div className="text-center mb-8">
+            <div className="w-20 h-20 bg-gradient-to-r from-red-600 to-red-800 rounded-3xl flex items-center justify-center mx-auto mb-5">
+              <FaUserShield className="text-white text-3xl" />
             </div>
-            <h2 className="text-xl font-bold text-white">Admin Panel</h2>
-            <p className="text-sm text-gray-400 mt-1">Maxfiy kirish</p>
+            <h2 className="text-2xl font-bold text-white">Admin Panel</h2>
+            <p className="text-gray-400 text-sm mt-2">Maxfiy kirish</p>
           </div>
 
-          {/* Form */}
-          <form onSubmit={handleLogin} className="space-y-4">
+          <form onSubmit={handleLogin} className="space-y-5">
             {error && (
-              <div className="bg-red-900/50 border border-red-500/50 text-red-300 text-sm p-3 rounded-xl">
+              <div className="bg-red-500/20 border border-red-500/50 text-red-300 text-sm p-4 rounded-2xl text-center">
                 {error}
               </div>
             )}
 
-            {/* Telefon */}
             <div>
-              <label className="text-xs font-semibold text-gray-400 mb-1.5 block">Telefon raqam</label>
-              <div className="relative">
-                <FaPhone className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500" size={14} />
-                <input
-                  type="tel"
-                  placeholder="998900000000"
-                  value={phone}
-                  onChange={(e) => { setPhone(e.target.value); setError(''); }}
-                  className="w-full pl-10 pr-4 py-3 bg-gray-700 border border-gray-600 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent placeholder-gray-500"
-                  autoFocus
-                />
-              </div>
+              <label className="text-sm font-semibold text-gray-300 mb-2 block">Admin nomi</label>
+              <input
+                type="text"
+                placeholder="Admin"
+                value={name}
+                onChange={(e) => { setName(e.target.value); setError(''); }}
+                className="w-full px-5 py-4 bg-gray-700 border border-gray-600 rounded-2xl text-white text-base focus:outline-none focus:ring-2 focus:ring-red-500 placeholder-gray-500"
+              />
             </div>
 
-            {/* Parol */}
             <div>
-              <label className="text-xs font-semibold text-gray-400 mb-1.5 block">Parol</label>
+              <label className="text-sm font-semibold text-gray-300 mb-2 block">Parol</label>
               <div className="relative">
-                <FaLock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500" size={14} />
+                <FaLock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 text-lg" />
                 <input
                   type={showPass ? 'text' : 'password'}
-                  placeholder="Admin paroli"
+                  placeholder="••••••••"
                   value={password}
                   onChange={(e) => { setPassword(e.target.value); setError(''); }}
-                  className="w-full pl-10 pr-12 py-3 bg-gray-700 border border-gray-600 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent placeholder-gray-500"
+                  className="w-full pl-12 pr-14 py-4 bg-gray-700 border border-gray-600 rounded-2xl text-white text-base focus:outline-none focus:ring-2 focus:ring-red-500 placeholder-gray-500"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPass(!showPass)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white text-lg"
                 >
-                  {showPass ? <FaEyeSlash size={16} /> : <FaEye size={16} />}
+                  {showPass ? <FaEyeSlash /> : <FaEye />}
                 </button>
               </div>
             </div>
 
-            {/* Submit */}
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-red-600 hover:bg-red-700 text-white py-3.5 rounded-xl font-bold text-sm active:scale-95 transition-all disabled:opacity-60"
+              className="w-full bg-red-600 hover:bg-red-500 text-white py-4 rounded-2xl font-bold text-lg transition-all active:scale-95 disabled:opacity-50"
             >
-              {loading ? 'Tekshirilmoqda...' : 'Kirish'}
+              {loading ? '⏳ Kutilmoqda...' : '🔓 Kirish'}
             </button>
           </form>
+
+          <p className="text-center text-gray-500 text-sm mt-6">
+            Nom: <span className="text-gray-300 font-semibold">Admin</span> | Parol: <span className="text-gray-300 font-semibold">admin123</span>
+          </p>
         </div>
       </div>
     </div>
