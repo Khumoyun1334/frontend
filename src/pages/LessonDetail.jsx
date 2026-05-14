@@ -11,7 +11,7 @@ const LessonDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [lesson, setLesson] = useState(null);
-  const [tab, setTab] = useState('theory'); // theory | test | practice
+  const [tab, setTab] = useState('theory');
   const [answers, setAnswers] = useState({});
   const [showResults, setShowResults] = useState(false);
   const [score, setScore] = useState(0);
@@ -30,7 +30,7 @@ const LessonDetail = () => {
 
   if (!lesson) return null;
 
-  const isLocked = lesson.id !== 1 && !completedSet.has(lesson.id - 1);
+  const isLocked = !user || (lesson.id !== 1 && !completedSet.has(lesson.id - 1));
   const isCompleted = completedSet.has(lesson.id);
   const currentIndex = lessons.findIndex(l => l.id === lesson.id);
   const prevLesson = currentIndex > 0 ? lessons[currentIndex - 1] : null;
@@ -49,27 +49,33 @@ const LessonDetail = () => {
     setScore(correct);
     setShowResults(true);
 
-    // Agar 60%+ to'g'ri bo'lsa - dars yakunlangan hisoblanadi
     const total = lesson.content.questions.length;
     const percent = Math.round((correct / total) * 100);
 
-    if (percent >= 60) {
+    if (percent >= 60 && user) {
+      // currentUser ni yangilash
+      const updatedUser = { ...user };
+      if (!updatedUser.completedLessons) updatedUser.completedLessons = [];
+      if (!updatedUser.completedLessons.includes(lesson.id)) {
+        updatedUser.completedLessons.push(lesson.id);
+      }
+      if (!updatedUser.testResults) updatedUser.testResults = [];
+      updatedUser.testResults.push({
+        lessonId: lesson.id,
+        score: correct,
+        total: total,
+        date: new Date().toISOString()
+      });
+
+      // localStorage ga saqlash
+      localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+
+      // Users arrayda ham yangilash
       const users = JSON.parse(localStorage.getItem('users') || '[]');
-      const userIdx = users.findIndex(u => u.id === user?.id);
+      const userIdx = users.findIndex(u => u.id === updatedUser.id);
       if (userIdx !== -1) {
-        if (!users[userIdx].completedLessons) users[userIdx].completedLessons = [];
-        if (!users[userIdx].completedLessons.includes(lesson.id)) {
-          users[userIdx].completedLessons.push(lesson.id);
-        }
-        if (!users[userIdx].testResults) users[userIdx].testResults = [];
-        users[userIdx].testResults.push({
-          lessonId: lesson.id,
-          score: correct,
-          total,
-          date: new Date().toISOString()
-        });
+        users[userIdx] = updatedUser;
         localStorage.setItem('users', JSON.stringify(users));
-        localStorage.setItem('currentUser', JSON.stringify(users[userIdx]));
       }
     }
   };
@@ -83,15 +89,27 @@ const LessonDetail = () => {
           </div>
           <h2 className="text-xl font-bold text-gray-800 mb-2">Dars yopiq</h2>
           <p className="text-gray-500 text-sm mb-6">
-            Bu darsni ochish uchun avval <span className="font-semibold text-blue-600">{prevLesson?.title}</span> darsidagi testdan 60%+ o'tishingiz kerak.
+            {!user 
+              ? 'Darslarni boshlash uchun avval ro\'yxatdan o\'ting.'
+              : `Bu darsni ochish uchun avval ${prevLesson?.id}-dars: "${prevLesson?.title}" testidan 60%+ o'tishingiz kerak.`
+            }
           </p>
-          <Link
-            to={`/lessons/${lesson.id - 1}`}
-            className="inline-flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-xl font-semibold text-sm active:scale-95 transition-transform"
-          >
-            <FaArrowLeft size={14} />
-            Oldingi darsga o'tish
-          </Link>
+          {!user ? (
+            <Link
+              to="/register"
+              className="inline-flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-xl font-semibold text-sm active:scale-95 transition-transform"
+            >
+              Ro'yxatdan o'tish
+            </Link>
+          ) : (
+            <Link
+              to={`/lessons/${lesson.id - 1}`}
+              className="inline-flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-xl font-semibold text-sm active:scale-95 transition-transform"
+            >
+              <FaArrowLeft size={14} />
+              Oldingi darsga o'tish
+            </Link>
+          )}
         </div>
       </div>
     );
@@ -292,7 +310,6 @@ const LessonDetail = () => {
                 ))}
               </div>
 
-              {/* Kod editor */}
               <div className="bg-gray-900 rounded-xl overflow-hidden">
                 <div className="px-4 py-2 bg-gray-800 flex items-center justify-between">
                   <span className="text-gray-400 text-xs">HTML Editor</span>
